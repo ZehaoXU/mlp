@@ -8,7 +8,7 @@
             "name": "(gdb) Launch",
             "type": "cppdbg",
             "request": "launch",
-            "program": "${workspaceFolder}/a.exe",
+            "program": "${workspaceFolder}/main.exe",
             "args": [],
             "stopAtEntry": false,
             "cwd": "${workspaceFolder}",
@@ -16,7 +16,7 @@
             "externalConsole": true,
             "MIMode": "gdb",
             "miDebuggerPath": "D:\\MinGW\\bin\\gdb.exe",
-            "preLaunchTask": "test cpp",
+            "preLaunchTask": "cpp compile",
             "setupCommands": [
                 {
                     "description": "Enable pretty-printing for gdb",

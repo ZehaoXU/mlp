@@ -1,11 +1,5 @@
-#include <iostream>
-
-using namespace std;
-
-int main()
+#include "test.h"
+int add(int a, int b)
 {
-    int x = 10;
-    int y = 20;
-    cout << "hello world!" << endl;
-    system("pause");
+    return a + b;
 }

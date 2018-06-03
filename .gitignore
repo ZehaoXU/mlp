@@ -1,1 +1,4 @@
 *.exe
+test.cpp
+test.h
+test2.cpp

@@ -4,12 +4,15 @@
     "version": "2.0.0",
     "tasks": [
         {
-            "label": "test cpp",
+            "label": "cpp compile",
             "type": "shell",
             "command": "g++",
             "args": [
                 "-g",
-                "test.cpp"
+                "test.cpp",
+                "test2.cpp",
+                "-o",
+                "main.exe"
             ],
             "group": {
                 "kind": "build",

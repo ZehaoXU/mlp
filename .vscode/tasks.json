@@ -9,8 +9,7 @@
             "command": "g++",
             "args": [
                 "-g",
-                "test.cpp",
-                "test2.cpp",
+                "net.cpp",
                 "-o",
                 "main.exe"
             ],

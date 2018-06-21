@@ -1,5 +1,12 @@
-#include "test.h"
-int add(int a, int b)
+#include <iostream>
+
+int main()
 {
-    return a + b;
+    using namespace std;
+    struct ok {
+        int a;
+        int b;
+    };
+    cout << ok().a << endl;
+    cout << ok().b << endl;
 }

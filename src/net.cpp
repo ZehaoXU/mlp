@@ -4,9 +4,127 @@
 #include <cstdlib>
 #include <cassert>
 #include <cmath>
+#include <fstream>
+#include <sstream>
 
 using namespace std;
 
+/********************* print process data ******************/
+class Print
+{
+  public:
+    void printDoubleVectorVals(string label, vector<double> &v);
+    Print();
+
+  private:
+};
+
+// definition of printDoubleVectorVals
+void Print::printDoubleVectorVals(string label, vector<double> &v)
+{
+    cout << label << " ";
+    for (unsigned i = 0; i < v.size(); i++)
+    {
+        cout << v[i] << " ";
+    }
+    cout << endl;
+}
+
+// constructor function
+Print::Print() {}
+
+/******************** train data ****************************/
+class TrainData
+{
+  public:
+    TrainData(const string filename);
+    void getTopology(vector<unsigned> &topology);
+    bool ifEof();
+    unsigned getInputVals(vector<double> &inputVals);
+    unsigned getTargetVals(vector<double> &targetVals);
+
+  private:
+    ifstream m_dataFile;
+};
+
+// definition of getTargetVals
+unsigned TrainData::getTargetVals(vector<double> &targetVals)
+{
+    targetVals.clear();
+
+    string line;
+    string label;
+
+    // output line look like: 'out: 1.0 2.0 ...'
+    getline(m_dataFile, line);
+    stringstream ss(line);
+    ss >> label;
+    if (label.compare("out:") == 0)
+    {
+        double val;
+        while (ss >> val)
+        {
+            targetVals.push_back(val);
+        }
+    }
+
+    return targetVals.size();
+}
+
+// definition of getInputs
+unsigned TrainData::getInputVals(vector<double> &inputVals)
+{
+    inputVals.clear();
+
+    string line;
+    string label;
+
+    // input line look like: 'in: 1.0 0.0 0.5...'
+    getline(m_dataFile, line);
+    stringstream ss(line);
+    ss >> label;
+    if (label.compare("in:") == 0)
+    {
+        double val;
+        while (ss >> val)
+        {
+            inputVals.push_back(val);
+        }
+    }
+
+    return inputVals.size();
+}
+
+// definition of ifEof
+bool TrainData::ifEof()
+{
+    return m_dataFile.eof();
+}
+
+// constructor function
+TrainData::TrainData(const string filename)
+{
+    m_dataFile.open(filename.c_str());
+}
+
+// definition of getTopology
+void TrainData::getTopology(vector<unsigned> &topology)
+{
+    string line;
+    cout << "[INFO] Please input the topology of MLP "
+            "(from input layer to outputer layer and separated by space):"
+         << endl;
+    getline(cin, line);
+    stringstream ss(line);
+    while (!ss.eof())
+    {
+        unsigned i;
+        ss >> i;
+        topology.push_back(i);
+    }
+}
+
+/*************************** start neural net ***************/
 struct Connection
 {
     double weight;
@@ -38,7 +156,7 @@ class Neuron
     vector<Connection> m_outputWeights;
     unsigned m_myIndex;
     double m_grad;
-    static double eta; // overall net learning rate
+    static double eta;   // overall net learning rate
     static double alpha; // momentum
 };
 
@@ -69,7 +187,7 @@ void Neuron::updateWeights(Layer &preLayer)
             eta * preNeuron.getOutputVal() * m_grad
             // input part 2, momentum of previous delta weight
             + alpha * oldDeltaWeight;
-        
+
         preNeuron.m_outputWeights[m_myIndex].deltaWeight = newDeltaWeight;
         preNeuron.m_outputWeights[m_myIndex].weight += newDeltaWeight;
     }
@@ -97,7 +215,6 @@ void Neuron::calOutputGrad(double targetVal)
     m_grad = delta * Neuron::transferFunctionDerivative(m_outputVal);
 }
 
-
 // definition of transferFunction
 double Neuron::transferFunction(double sum)
 {
@@ -117,7 +234,7 @@ double Neuron::transferFunctionDerivative(double x)
 void Neuron::feedForward(const Layer &preLayer)
 {
     double sum = 0.0;
-    
+
     // sum all the neurons' output value in the previous layer
     // include the bias node in the previous layer
     for (unsigned n = 0; n < preLayer.size(); n++)
@@ -165,13 +282,23 @@ class Net
     void feedForward(const vector<double> &inputVals);
     void backPropagation(const vector<double> &targetVals);
     void getResults(vector<double> &resultVals);
+    double getAverageError() const;
 
   private:
     vector<Layer> m_layers; // m_layers[layerNum][neuronNum]
     double m_error;
-    double m_recentAverageError;
-    double m_recentAverageSmoothingFactor;
+    double m_averageError;
+    static double m_averageSmoothingFactor;
 };
+
+// number of samples to calculate average
+double Net::m_averageSmoothingFactor = 100.0;
+
+// definition of getAverageError
+double Net::getAverageError() const
+{
+    return m_averageError;
+}
 
 // definition of getResults
 void Net::getResults(vector<double> &resultVals)
@@ -202,7 +329,7 @@ void Net::backPropagation(const vector<double> &targetVals)
     m_error = sqrt(m_error);
 
     // recent average measurement
-    m_recentAverageError = (m_recentAverageError + m_recentAverageSmoothingFactor + m_error) / (m_recentAverageSmoothingFactor + 1);
+    m_averageError = (m_averageError + m_averageSmoothingFactor + m_error) / (m_averageSmoothingFactor + 1);
 
     // calculate output layer gradients
     for (unsigned i = 0; i < outputLayer.size(); i++)
@@ -238,6 +365,7 @@ void Net::backPropagation(const vector<double> &targetVals)
 // definition of constructor function Net
 Net::Net(const vector<unsigned> &topology)
 {
+    cout << "[INFO] Start to build a Neuron Net..." << endl;
     unsigned totalLayers = topology.size(); // number of layers
     for (unsigned layerNum = 0; layerNum < totalLayers; layerNum++)
     {
@@ -255,11 +383,16 @@ Net::Net(const vector<unsigned> &topology)
         for (unsigned neuronNum = 0; neuronNum <= topology[layerNum]; neuronNum++) // add bias neuron so '<='
         {
             m_layers.back().push_back(Neuron(numOutputs, neuronNum));
+            cout << "Neuron No." << neuronNum << " in layer No."
+                 << layerNum << " is built" << endl;
         }
 
         // set the bias nodes' output to be 1.0
         m_layers.back().back().setOutputVal(1.0);
+        cout << "bias node's output value set 1.0" << endl;
     }
+
+    cout << "[INFO] Successfully build a Neuron Net!" << endl;
 }
 
 // definition of feedForward
@@ -285,26 +418,60 @@ void Net::feedForward(const vector<double> &inputVals)
     }
 }
 
-// ***************************************** main *****************************************
+// ************************************* main *****************************************
 int main()
 {
     // test1: make a neuron network {3,2,1}
-
     vector<unsigned> topology;
-    topology.push_back(3);
-    topology.push_back(2);
-    topology.push_back(1);
+
+    // read data file
+    TrainData trainData("../funcData.txt");
+    if (trainData.ifEof() == 0)
+    {
+        cout << "[INFO] Successfully read data file." << endl;
+    }
+
+    trainData.getTopology(topology);
+
     Net myNet(topology);
 
-    vector<double> inputVals;
-    inputVals.push_back(1.0);
-    inputVals.push_back(1.5);
-    inputVals.push_back(0.5);
-    myNet.feedForward(inputVals);
+    Print print;
 
-    // vector<double> targetVals;
-    // myNet.backPropagation(targetVals);
+    vector<double> inputVals, targetVals, resultVals;
+    int step = 0;
 
-    // vector<double> resultVals;
-    // myNet.getResults(resultVals);
+    while (!trainData.ifEof())
+    {
+        step++;
+        cout << endl
+             << "Step " << step << endl;
+
+        // getInputVals returns the number of input values
+        if (trainData.getInputVals(inputVals) != topology[0])
+        {
+            cout << "[ERROR] Input vector size not equal to input layer size!" << endl;
+            cout << inputVals.size() << endl;
+            break;
+        }
+        // show input valus
+        print.printDoubleVectorVals("Inputs: ", inputVals);
+        myNet.feedForward(inputVals);
+
+        // show feedforward results of myNet
+        myNet.getResults(resultVals);
+        print.printDoubleVectorVals("Outputs: ", resultVals);
+
+        // train the net with target values
+        if (trainData.getTargetVals(targetVals) != topology.back())
+        {
+            cout << "[ERROR] Target vector size not equal to output layer size!" << endl;
+            break;
+        }
+        print.printDoubleVectorVals("Targets: ", targetVals);
+        myNet.backPropagation(targetVals);
+
+        cout << "Net average error: " << myNet.getAverageError() << endl;
+    }
+    system("pause");
+    
 }

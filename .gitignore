@@ -1,6 +1,6 @@
-*.exe
-test*
-github.cpp
-*.md
+/src/1.cpp
+/src/2.cpp
+/src/test*
+/src/*.exe
 
-.vscode
+/.vscode

@@ -1,6 +1,10 @@
-/src/1.cpp
-/src/2.cpp
-/src/test*
-/src/*.exe
+src/test*
+src/*.exe
+src/*.o
+src/net.cpp
+
+src/create*
+
+/trainingSet
 
 /.vscode

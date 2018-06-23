@@ -1,5 +1,3 @@
-src/test*
-
 src/*.exe
 src/*.o
 src/net.cpp

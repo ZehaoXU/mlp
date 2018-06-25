@@ -3,3 +3,6 @@ src/*.o
 src/net.cpp
 
 /.vscode
+
+*.html
+*.pdf

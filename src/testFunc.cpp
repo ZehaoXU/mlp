@@ -23,7 +23,7 @@ int main()
     vector<unsigned> topology;
 
     // read data file
-    TrainData trainData("./trainingSet/funcData.txt");
+    TrainData trainData("../trainingSet/funcData.txt");
     if (trainData.ifEof() == 0)
     {
         cout << "[INFO] Successfully read data file." << endl;
